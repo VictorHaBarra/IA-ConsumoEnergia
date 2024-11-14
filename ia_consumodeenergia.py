@@ -59,11 +59,17 @@ if uploaded_file is not None:
     plt.ylabel('Consumo (KWh)')
     st.pyplot()  # Exibe o gráfico no Streamlit
 
-    # Detectar picos
-    threshold = y_pred.mean() + 2 * y_pred.std()  # Limite de 2 desvios padrão
+    # Slider para ajustar o limiar de picos (em múltiplos de desvios padrão)
+    st.sidebar.subheader('Ajustar Limiar de Pico')
+    multiplier = st.sidebar.slider('Multiplicador de Desvio Padrão', 1, 5, 2)
+
+    # Calcular o limiar de pico com base no multiplicador
+    threshold = y_pred.mean() + multiplier * y_pred.std()  # Limite ajustável
     alerts = y_pred > threshold
 
-    st.subheader('Alertas de Pico de Consumo')
+    st.subheader(f'Alertas de Pico de Consumo (Multiplicador: {multiplier}x)')
+
+    # Exibir alertas de forma interativa
     if alerts.any():
         for i, alert in enumerate(alerts):
             if alert:
