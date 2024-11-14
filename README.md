@@ -24,7 +24,12 @@ Este projeto utiliza as seguintes bibliotecas Python:
 - **matplotlib**: Para visualização de gráficos.
 - **streamlit**: Para a criação da interface web interativa.
 
-Você pode instalar as dependências executando o seguinte comando:
+Link para o Streamlit
+Você também pode acessar a versão do app Streamlit online no seguinte link:
 
-```bash
-pip install -r requirements.txt
+##Streamlit
+
+[https://ia-consumoenergia-any8zsbxyvfxhj5zvjlfwn.streamlit.app/](https://ia-consumoenergia-any8zsbxyvfxhj5zvjlfwn.streamlit.app/)
+
+
+
