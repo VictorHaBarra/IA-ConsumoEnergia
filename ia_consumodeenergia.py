@@ -1,65 +1,77 @@
+import streamlit as st
 import pandas as pd
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import mean_squared_error
 import matplotlib.pyplot as plt
 
-# Carregar o CSV e combinar as colunas de data e hora
-df = pd.read_csv('dataset.csv')
-df['Timestamp'] = pd.to_datetime(df['TxnDate'] + ' ' + df['TxnTime'])
-df.set_index('Timestamp', inplace=True)
+# Título da página
+st.title('Previsão de Consumo de Energia')
 
-# Criar novas features baseadas no tempo
-df['Hour'] = df.index.hour
-df['DayOfWeek'] = df.index.dayofweek
-df['Month'] = df.index.month
+# Sidebar para upload de arquivo CSV
+st.sidebar.header('Carregar Dataset')
+uploaded_file = st.sidebar.file_uploader("Escolha um arquivo CSV", type=['csv'])
 
-# Definir o consumo futuro para prever (exemplo: 1 hora à frente)
-df['Future_Consumption'] = df['Consumption'].shift(-1)
+if uploaded_file is not None:
+    # Carregar o CSV e combinar as colunas de data e hora
+    df = pd.read_csv(uploaded_file)
+    df['Timestamp'] = pd.to_datetime(df['TxnDate'] + ' ' + df['TxnTime'])
+    df.set_index('Timestamp', inplace=True)
 
-# Remover a última linha (sem valor para previsão)
-df = df.dropna()
+    # Criar novas features baseadas no tempo
+    df['Hour'] = df.index.hour
+    df['DayOfWeek'] = df.index.dayofweek
+    df['Month'] = df.index.month
 
-# Features (X) e target (y)
-X = df[['Hour', 'DayOfWeek', 'Month', 'Consumption']]
-y = df['Future_Consumption']
+    # Definir o consumo futuro para prever (exemplo: 1 hora à frente)
+    df['Future_Consumption'] = df['Consumption'].shift(-1)
 
-# Dividir os dados em treinamento e teste
-X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+    # Remover a última linha (sem valor para previsão)
+    df = df.dropna()
 
-# Criar e treinar o modelo
-model = RandomForestRegressor(n_estimators=100, random_state=42)
-model.fit(X_train, y_train)
+    # Features (X) e target (y)
+    X = df[['Hour', 'DayOfWeek', 'Month', 'Consumption']]
+    y = df['Future_Consumption']
 
-# Previsões
-y_pred = model.predict(X_test)
+    # Dividir os dados em treinamento e teste
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 
-# Avaliar o modelo
-mse = mean_squared_error(y_test, y_pred)
-print(f'Mean Squared Error: {mse}')
+    # Criar e treinar o modelo
+    model = RandomForestRegressor(n_estimators=100, random_state=42)
+    model.fit(X_train, y_train)
 
-# Exibir um gráfico comparando consumo real e previsto
-plt.plot(y_test.values, label='Consumo Real')
-plt.plot(y_pred, label='Consumo Previsto', linestyle='--')
-plt.legend()
-plt.title('Comparação entre Consumo Real e Previsto')
-plt.xlabel('Índice')
-plt.ylabel('Consumo (KWh)')
-plt.show()
+    # Previsões
+    y_pred = model.predict(X_test)
 
-# Detectar picos (por exemplo, se o consumo previsto ultrapassar um limite)
-threshold = y_pred.mean() + 2 * y_pred.std()  # Limite de 2 desvios padrão
-alerts = y_pred > threshold
+    # Avaliar o modelo
+    mse = mean_squared_error(y_test, y_pred)
+    st.write(f'Mean Squared Error: {mse:.2f}')
 
-# Exibir alertas de forma mais amigável e lúdica
-alert_indexes = X_test.index[alerts]
-print("🚨 ALERTA DE PICO DE CONSUMO 🚨")
+    # Exibir gráfico comparando consumo real e previsto
+    st.subheader('Gráfico de Comparação entre Consumo Real e Previsto')
 
-if len(alert_indexes) > 0:
-    for i, alert_time in enumerate(alert_indexes):
-        print(f"⚡ Pico detectado em: {alert_time.strftime('%A, %d de %B de %Y às %H:%M:%S')}")
-        print(f"🔴 Consumo estimado: {y_pred[alerts][i]:.2f} KWh")  # Corrigido para usar o índice correto
-        print(f"💡 Dica: Para evitar picos como esse, tente usar aparelhos de alto consumo em horários fora do pico, como à noite ou pela manhã.")
-        print("-" * 50)  # Separador visual entre alertas
+    plt.figure(figsize=(10, 6))
+    plt.plot(y_test.values, label='Consumo Real')
+    plt.plot(y_pred, label='Consumo Previsto', linestyle='--')
+    plt.legend()
+    plt.title('Comparação entre Consumo Real e Previsto')
+    plt.xlabel('Índice')
+    plt.ylabel('Consumo (KWh)')
+    st.pyplot()  # Exibe o gráfico no Streamlit
+
+    # Detectar picos
+    threshold = y_pred.mean() + 2 * y_pred.std()  # Limite de 2 desvios padrão
+    alerts = y_pred > threshold
+
+    st.subheader('Alertas de Pico de Consumo')
+    if alerts.any():
+        for i, alert in enumerate(alerts):
+            if alert:
+                st.markdown(f"🚨 **Pico detectado em:** {X_test.index[i].strftime('%A, %d de %B de %Y às %H:%M:%S')}")
+                st.markdown(f"🔴 **Consumo estimado:** {y_pred[i]:.2f} KWh")
+                st.markdown("💡 **Dica:** Para evitar picos como esse, tente usar aparelhos de alto consumo em horários fora do pico.")
+                st.markdown("-" * 50)
+    else:
+        st.write("✅ Nenhum pico detectado. Continue monitorando seu consumo de energia.")
 else:
-    print("✅ Nenhum pico detectado. Continue monitorando seu consumo de energia.")
+    st.write("Carregue um arquivo CSV para começar.")
