@@ -50,7 +50,7 @@ A solução é composta pelos seguintes elementos:
 ### 2. Configuração do ESP32
 1. Baixe ou clone este repositório:
    ```bash
-   git clone [https://github.com/seu-repositorio/projeto-iot](https://github.com/VictorHaBarra/IA-ConsumoEnergia).git
+   git clone https://github.com/VictorHaBarra/IA-ConsumoEnergia.git
    cd IA-ConsumoEnergia
 
 
